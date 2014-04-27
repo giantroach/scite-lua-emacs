@@ -548,4 +548,5 @@ function emacs()
 end
 
 --add emacs to OnKey array
-addOnkey(emacs())
+emacs = emacs()
+addOnkey(emacs)
