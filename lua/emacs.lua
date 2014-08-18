@@ -7,6 +7,7 @@ function emacs()
     local lastSrchPos = ""
     local lastKc = 0
     local lastCmd = "none"
+    local mXBuffer = {}
 
     local killring = {}
     local killring_lastcpos = -1
@@ -66,13 +67,68 @@ function emacs()
         end
     end
 
+    --show search box with clipboard if no selection is made
+    local function searchWithClipBoard()
+        local txt = editor:GetSelText()
+        print("len"..string.len(txt))
+        if string.len(txt) > 0 then
+            scite.MenuCommand(IDM_FIND)
+        else
+            local src = editor.CurrentPos
+            editor:Paste()
+            local dst = editor.CurrentPos
+            editor:SetSel(src, dst)
+            scite.MenuCommand(IDM_FIND)
+            editor:Undo()
+        end
+    end
+
     -- --------------------------------
     -- OnKey call back starts here
     --
     return function (kc, shift, ctrl, alt, xxx)
 --~         print("kc:" .. kc)
 --~         print("last kc was.."..lastKc)
+--~         print('char:'..string.char(kc))
         lastKc = kc
+
+
+        -- --------------------------------
+        -- M-x combination
+        --
+        if inMx then
+            if ctrl and kc == 71 then --g
+                lastCmd = "C-g"
+                inMx = false
+                return true
+            end
+
+            if kc == 13 or (ctrl and kc == 77) then -- enter / C-m
+                local cmd = string.lower(table.concat(mXBuffer))
+
+                if cmd == "vim" then
+                    if activateOnkey("vim") then
+                        print("")
+                        print('vim activated')
+                        lastCmd = "M-x vim"
+                        inMx = false
+                        return true
+                    end
+                end
+
+                lastCmd = "M-x unknown"
+                inMx = false
+                print("")
+                print("Unknown command: "..cmd)
+                return true
+            end
+
+            table.insert(mXBuffer, string.char(kc))
+            output:LineEnd()
+            output:InsertText(output.CurrentPos, string.lower(string.char(kc)))
+            return true
+        end
+
 
         -- --------------------------------
         --C-x combination
@@ -282,7 +338,7 @@ function emacs()
                 return true
             end
 
-            if kc == 77 then --m
+            if kc == 77 and not inMx then --m
                 lastCmd = "C-m"
                 if editor:CallTipActive() then
                   editor:AutoCComplete()
@@ -332,14 +388,16 @@ function emacs()
                 if inSrch then
                     local tmpPos = editor.CurrentPos
                     if lastSrchPos == tmpPos then
-                        scite.MenuCommand(IDM_FIND)
+--~                         scite.MenuCommand(IDM_FIND)
+                        searchWithClipBoard()
                         inSrch = false
                     else
                     scite.MenuCommand(IDM_FINDNEXT)
                         lastSrchPos = tmpPos
                     end
                 else
-                    scite.MenuCommand(IDM_FIND)
+--~                     scite.MenuCommand(IDM_FIND)
+                    searchWithClipBoard()
                     lastSrchPos = editor.CurrentPos
                     inSrch = true
                 end
@@ -495,6 +553,14 @@ function emacs()
                 return true
             end
 
+            if kc == 88 then --x
+                lastCmd = "M-x"
+                output:InsertText(-1, "M-x ")
+                mXBuffer = {}
+                inMx = true
+                return true
+            end
+
             if kc == 89 then --y
                 if (lastCmd == "C-y" or lastCmd == "M-y") then
                     lastCmd = "M-y"
@@ -549,4 +615,7 @@ end
 
 --add emacs to OnKey array
 emacs = emacs()
-addOnkey(emacs)
+addOnkey({
+    label = "emacs",
+    func = emacs
+})
