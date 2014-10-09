@@ -8,6 +8,7 @@ function emacs()
     local lastKc = 0
     local lastCmd = "none"
     local mXBuffer = {}
+    local LINEFEED = "\n"
 
     local killring = {}
     local killring_lastcpos = -1
@@ -54,7 +55,7 @@ function emacs()
             end
             killring_strlist = strShrink(killring[1])
             for i = 2, table.getn(killring) do
-                killring_strlist = killring_strlist .. "\n" .. strShrink(killring[i])
+                killring_strlist = killring_strlist .. LINEFEED .. strShrink(killring[i])
             end
             editor:CallTipShow(editor.CurrentPos, killring_strlist)
         end
@@ -70,7 +71,6 @@ function emacs()
     --show search box with clipboard if no selection is made
     local function searchWithClipBoard()
         local txt = editor:GetSelText()
-        print("len"..string.len(txt))
         if string.len(txt) > 0 then
             scite.MenuCommand(IDM_FIND)
         else
@@ -555,6 +555,8 @@ function emacs()
 
             if kc == 88 then --x
                 lastCmd = "M-x"
+                output:DocumentEnd()
+                print("")
                 output:InsertText(-1, "M-x ")
                 mXBuffer = {}
                 inMx = true
