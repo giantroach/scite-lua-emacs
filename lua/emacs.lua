@@ -103,6 +103,13 @@ function emacs()
                 return true
             end
 
+            if (ctrl and kc == 72) or kc == 127 then -- C-h or delete
+                table.remove(mXBuffer)
+                output:LineEnd()
+                output:DeleteBack()
+                return true
+            end
+
             if kc == 13 or (ctrl and kc == 77) then -- enter / C-m
                 local cmd = string.lower(table.concat(mXBuffer))
 
