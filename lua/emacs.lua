@@ -556,8 +556,8 @@ function emacs()
             if kc == 88 then --x
                 lastCmd = "M-x"
                 output:DocumentEnd()
-                print("")
-                output:InsertText(-1, "M-x ")
+                output:InsertText(-1, LINEFEED .. "M-x ")
+                output:DocumentEnd()
                 mXBuffer = {}
                 inMx = true
                 return true
