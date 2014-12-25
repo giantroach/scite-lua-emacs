@@ -24,7 +24,7 @@ function emacs()
     --shift top item of killring and push back
     local function killring_shift()
         local top = table.remove(killring, 1)
-        table.insert(killring, top)
+        table.insert(killring, top) -- fixme 2nd arg lacked??
         return killring[1]
     end
 
@@ -70,7 +70,6 @@ function emacs()
     --show search box with clipboard if no selection is made
     local function searchWithClipBoard()
         local txt = editor:GetSelText()
-        print("len"..string.len(txt))
         if string.len(txt) > 0 then
             scite.MenuCommand(IDM_FIND)
         else
@@ -375,9 +374,16 @@ function emacs()
             if kc == 82 then --r
                 lastCmd = "C-r"
                 if inSrch then
-                    scite.MenuCommand(IDM_FINDNEXTBACK)
+                    local tmpPos = editor.CurrentPos
+                    if lastSrchPos == tmpPos then
+                        inSrch = false
+                    else
+                        scite.MenuCommand(IDM_FINDNEXTBACK)
+                        lastSrchPos = tmpPos
+                    end
                 else
                     scite.MenuCommand(IDM_FIND)
+                    lastSrchPos = editor.CurrentPos
                     inSrch = true
                 end
                 return true
@@ -392,7 +398,7 @@ function emacs()
                         searchWithClipBoard()
                         inSrch = false
                     else
-                    scite.MenuCommand(IDM_FINDNEXT)
+                        scite.MenuCommand(IDM_FINDNEXT)
                         lastSrchPos = tmpPos
                     end
                 else
@@ -563,8 +569,14 @@ function emacs()
 
             if kc == 89 then --y
                 if (lastCmd == "C-y" or lastCmd == "M-y") then
-                    lastCmd = "M-y"
-                    local nextText = killring_shift()
+                    local nextText
+                    if shift then
+                        lastCmd = "M-Y"
+                        nextText = killring_unshift()
+                    else
+                        lastCmd = "M-y"
+                        nextText = killring_shift()
+                    end
                     if nextText ~= nil then
                         editor:Undo()
                         killring_show()
