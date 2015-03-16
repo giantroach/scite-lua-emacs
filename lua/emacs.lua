@@ -2,12 +2,17 @@
 function emacs()
     local inRegion = false
     local inCx = false
+    local inCg = false
     local inMx = false
     local inSrch = false
     local lastSrchPos = ""
     local lastKc = 0
     local lastCmd = "none"
     local mXBuffer = {}
+    local kcSlash = 191
+    if props["PLAT_MAC"] then
+        kcSlash = 47
+    end
 
     local killring = {}
     local killring_lastcpos = -1
@@ -204,6 +209,19 @@ function emacs()
             return true
         end
 
+        -- --------------------------------
+        -- C-g combination
+        --
+        if inCg then
+            if kc == 71 then
+                lastCmd = "C-g g"
+                scite.MenuCommand(IDM_GOTO)
+                return true
+            end
+
+            inCg = false
+            return true
+        end
 
         -- --------------------------------
         -- C-M combination
@@ -442,8 +460,7 @@ function emacs()
                 return true
             end
 
-    --~         if kc == 191 then --/
-            if kc == 47 then --/
+            if kc == kcSlash then --/
                 lastCmd = "C-/"
                 editor:Undo()
                 inRegion = false
@@ -498,6 +515,12 @@ function emacs()
                 end
                 inSrch = false
                 killring_hide()
+                return true
+            end
+
+            if kc == 71 then --g
+                lastCmd = "C-g"
+                inCg = true
                 return true
             end
 
