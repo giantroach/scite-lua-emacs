@@ -9,6 +9,15 @@ function emacs()
     local lastKc = 0
     local lastCmd = "none"
     local mXBuffer = {}
+
+    local kcLessThan = 188
+    if props["PLAT_MAC"] then
+        kcLessThan = 60
+    end
+    local kcGreaterThan = 190
+    if props["PLAT_MAC"] then
+        kcGreaterThan = 62
+    end
     local kcSlash = 191
     if props["PLAT_MAC"] then
         kcSlash = 47
@@ -612,7 +621,7 @@ function emacs()
                 return true
             end
 
-            if kc == 188 or kc == 60 then --,
+            if kc == kcLessThan then --, <
                 if shift then --<
                     lastCmd = "M-<"
                     if inRegion then
@@ -624,7 +633,7 @@ function emacs()
                 return true
             end
 
-            if kc == 190 or kc == 62 then --.
+            if kc == kcGreaterThan then --. >
                 if shift then -->
                     lastCmd = "M->"
                     if inRegion then
@@ -639,6 +648,12 @@ function emacs()
             if kc == 59 then --;
                 lastCmd = "M-;"
                 scite.MenuCommand(IDM_BLOCK_COMMENT)
+                return true
+            end
+
+            if kc == 37 then --%
+                lastCmd = "M-%"
+                scite.MenuCommand(IDM_REPLACE)
                 return true
             end
 
