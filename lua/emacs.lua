@@ -2,6 +2,7 @@
 function emacs()
     local inRegion = false
     local inCx = false
+    local inCg = false
     local inMx = false
     local inSrch = false
     local lastSrchPos = ""
@@ -9,6 +10,19 @@ function emacs()
     local lastCmd = "none"
     local mXBuffer = {}
     local LINEFEED = "\n"
+
+    local kcLessThan = 188
+    if props["PLAT_MAC"] then
+        kcLessThan = 60
+    end
+    local kcGreaterThan = 190
+    if props["PLAT_MAC"] then
+        kcGreaterThan = 62
+    end
+    local kcSlash = 191
+    if props["PLAT_MAC"] then
+        kcSlash = 47
+    end
 
     local killring = {}
     local killring_lastcpos = -1
@@ -25,7 +39,7 @@ function emacs()
     --shift top item of killring and push back
     local function killring_shift()
         local top = table.remove(killring, 1)
-        table.insert(killring, top)
+        table.insert(killring, top) -- fixme 2nd arg lacked??
         return killring[1]
     end
 
@@ -212,6 +226,19 @@ function emacs()
             return true
         end
 
+        -- --------------------------------
+        -- C-g combination
+        --
+        if inCg then
+            if kc == 71 then
+                lastCmd = "C-g g"
+                scite.MenuCommand(IDM_GOTO)
+                return true
+            end
+
+            inCg = false
+            return true
+        end
 
         -- --------------------------------
         -- C-M combination
@@ -382,9 +409,16 @@ function emacs()
             if kc == 82 then --r
                 lastCmd = "C-r"
                 if inSrch then
-                    scite.MenuCommand(IDM_FINDNEXTBACK)
+                    local tmpPos = editor.CurrentPos
+                    if lastSrchPos == tmpPos then
+                        inSrch = false
+                    else
+                        scite.MenuCommand(IDM_FINDNEXTBACK)
+                        lastSrchPos = tmpPos
+                    end
                 else
                     scite.MenuCommand(IDM_FIND)
+                    lastSrchPos = editor.CurrentPos
                     inSrch = true
                 end
                 return true
@@ -399,7 +433,7 @@ function emacs()
                         searchWithClipBoard()
                         inSrch = false
                     else
-                    scite.MenuCommand(IDM_FINDNEXT)
+                        scite.MenuCommand(IDM_FINDNEXT)
                         lastSrchPos = tmpPos
                     end
                 else
@@ -443,8 +477,7 @@ function emacs()
                 return true
             end
 
-    --~         if kc == 191 then --/
-            if kc == 47 then --/
+            if kc == kcSlash then --/
                 lastCmd = "C-/"
                 editor:Undo()
                 inRegion = false
@@ -499,6 +532,12 @@ function emacs()
                 end
                 inSrch = false
                 killring_hide()
+                return true
+            end
+
+            if kc == 71 then --g
+                lastCmd = "C-g"
+                inCg = true
                 return true
             end
 
@@ -572,8 +611,14 @@ function emacs()
 
             if kc == 89 then --y
                 if (lastCmd == "C-y" or lastCmd == "M-y") then
-                    lastCmd = "M-y"
-                    local nextText = killring_shift()
+                    local nextText
+                    if shift then
+                        lastCmd = "M-Y"
+                        nextText = killring_unshift()
+                    else
+                        lastCmd = "M-y"
+                        nextText = killring_shift()
+                    end
                     if nextText ~= nil then
                         editor:Undo()
                         killring_show()
@@ -586,7 +631,7 @@ function emacs()
                 return true
             end
 
-            if kc == 188 or kc == 60 then --,
+            if kc == kcLessThan then --, <
                 if shift then --<
                     lastCmd = "M-<"
                     if inRegion then
@@ -598,7 +643,7 @@ function emacs()
                 return true
             end
 
-            if kc == 190 or kc == 62 then --.
+            if kc == kcGreaterThan then --. >
                 if shift then -->
                     lastCmd = "M->"
                     if inRegion then
@@ -613,6 +658,12 @@ function emacs()
             if kc == 59 then --;
                 lastCmd = "M-;"
                 scite.MenuCommand(IDM_BLOCK_COMMENT)
+                return true
+            end
+
+            if kc == 37 then --%
+                lastCmd = "M-%"
+                scite.MenuCommand(IDM_REPLACE)
                 return true
             end
 
