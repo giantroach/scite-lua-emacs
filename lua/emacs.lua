@@ -437,6 +437,19 @@ function emacs()
                 return true
             end
 
+            if kc == 84 then --t
+                lastCmd = "C-t"
+                local currentChar = string.char(editor.CharAt[editor.CurrentPos])
+                -- switch current cursor char with prev char
+                local tmpPos = editor.CurrentPos
+                editor:ClearSelections() --ClearSelections moves the carret pos to document top
+                editor:GotoPos(tmpPos) --So we gotta reset the carret pos
+                editor:InsertText(editor.CurrentPos - 1, currentChar)
+                editor:CharRight()
+                editor:DeleteBack()
+                return true
+            end
+
             if kc == 86 then --v
                 lastCmd = "C-v"
                 if inRegion then
