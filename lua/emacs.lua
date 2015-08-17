@@ -9,6 +9,7 @@ function emacs()
     local lastKc = 0
     local lastCmd = "none"
     local mXBuffer = {}
+    local LINEFEED = "\n"
 
     local kcLessThan = 188
     if props["PLAT_MAC"] then
@@ -68,7 +69,7 @@ function emacs()
             end
             killring_strlist = strShrink(killring[1])
             for i = 2, table.getn(killring) do
-                killring_strlist = killring_strlist .. "\n" .. strShrink(killring[i])
+                killring_strlist = killring_strlist .. LINEFEED .. strShrink(killring[i])
             end
             editor:CallTipShow(editor.CurrentPos, killring_strlist)
         end
@@ -113,6 +114,13 @@ function emacs()
             if ctrl and kc == 71 then --g
                 lastCmd = "C-g"
                 inMx = false
+                return true
+            end
+
+            if (ctrl and kc == 72) or kc == 127 then -- C-h or delete
+                table.remove(mXBuffer)
+                output:LineEnd()
+                output:DeleteBack()
                 return true
             end
 
@@ -606,7 +614,9 @@ function emacs()
 
             if kc == 88 then --x
                 lastCmd = "M-x"
-                output:InsertText(-1, "M-x ")
+                output:DocumentEnd()
+                output:InsertText(-1, LINEFEED .. "M-x ")
+                output:DocumentEnd()
                 mXBuffer = {}
                 inMx = true
                 return true
